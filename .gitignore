@@ -100,3 +100,5 @@ temp/
 .serverless/
 .fusebox/
 .dynamodb/
+
+docs
