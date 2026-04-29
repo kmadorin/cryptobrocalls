@@ -296,6 +296,16 @@ export function RightPanel() {
         return JSON.stringify({ ok: false, error: String(err) });
       }
     });
+    room.registerRpcMethod('claudeReset', async () => {
+      try {
+        store.set('/claude/prompt', '');
+        store.set('/claude/output', '');
+        store.set('/claude/status', 'idle');
+        return JSON.stringify({ ok: true });
+      } catch (err) {
+        return JSON.stringify({ ok: false, error: String(err) });
+      }
+    });
     room.registerRpcMethod('claudeDone', async ({ payload }) => {
       try {
         const { ok } = JSON.parse(payload) as { ok?: boolean };
@@ -310,6 +320,7 @@ export function RightPanel() {
       room.unregisterRpcMethod('showSwapWidget');
       room.unregisterRpcMethod('claudeStart');
       room.unregisterRpcMethod('claudeAppend');
+      room.unregisterRpcMethod('claudeReset');
       room.unregisterRpcMethod('claudeDone');
     };
   }, [room, store]);

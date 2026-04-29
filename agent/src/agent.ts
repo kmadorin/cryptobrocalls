@@ -49,32 +49,41 @@ function handleClaudeLine(room: Room, line: string): void {
         });
       }
     }
+  } else if (msg.type === 'result') {
+    void rpc(room, 'claudeAppend', {
+      text: `\n\n---\n_turn complete (${msg.subtype ?? 'unknown'}). Reply via voice to continue._\n\n`,
+    });
   }
-  // skip 'result' — duplicates the assistant text content already streamed.
 }
 
 const CLAUDE_BIN =
   process.env.CLAUDE_BIN ?? `${process.env.HOME ?? ''}/.local/bin/claude`;
 
-function startClaude(room: Room, prompt: string): void {
-  if (currentClaude && !currentClaude.killed) {
-    currentClaude.kill('SIGTERM');
-    currentClaude = null;
-  }
+function writeUserTurn(proc: ChildProcess, text: string): boolean {
+  if (!proc.stdin || proc.stdin.destroyed || proc.killed) return false;
+  const line =
+    JSON.stringify({
+      type: 'user',
+      message: { role: 'user', content: text },
+    }) + '\n';
+  return proc.stdin.write(line);
+}
 
+function spawnClaude(room: Room): ChildProcess {
   const cwd = process.env.CLAUDE_WORKDIR ?? process.cwd();
   const model = process.env.CLAUDE_MODEL ?? 'haiku';
   const mcpConfig = process.env.CLAUDE_MCP_CONFIG ?? `${cwd}/mcp-config.json`;
   console.log(
-    `[claude] spawn bin=${CLAUDE_BIN} cwd=${cwd} model=${model} mcp=${mcpConfig} prompt=${JSON.stringify(prompt)}`,
+    `[claude] spawn bin=${CLAUDE_BIN} cwd=${cwd} model=${model} mcp=${mcpConfig} (streaming)`,
   );
   const proc = spawn(
     CLAUDE_BIN,
     [
       '-p',
-      prompt,
       '--model',
       model,
+      '--input-format',
+      'stream-json',
       '--output-format',
       'stream-json',
       '--verbose',
@@ -83,9 +92,14 @@ function startClaude(room: Room, prompt: string): void {
       '--permission-mode',
       'bypassPermissions',
     ],
-    { cwd, env: process.env, stdio: ['ignore', 'pipe', 'pipe'] },
+    {
+      cwd,
+      env: process.env,
+      stdio: ['pipe', 'pipe', 'pipe'],
+      detached: true,
+    },
   );
-  currentClaude = proc;
+  console.log(`[claude] spawned pid=${proc.pid}`);
 
   let buffer = '';
   proc.stdout?.on('data', (chunk: Buffer) => {
@@ -106,11 +120,48 @@ function startClaude(room: Room, prompt: string): void {
     void rpc(room, 'claudeDone', { ok: false, error: String(err) });
     if (currentClaude === proc) currentClaude = null;
   });
-  proc.on('close', (code) => {
-    console.log(`[claude] closed exitCode=${code}`);
+  proc.on('close', (code, signal) => {
+    console.log(`[claude] closed pid=${proc.pid} exitCode=${code} signal=${signal}`);
     void rpc(room, 'claudeDone', { ok: code === 0, exitCode: code });
     if (currentClaude === proc) currentClaude = null;
   });
+  return proc;
+}
+
+function killClaude(proc: ChildProcess): void {
+  try {
+    proc.stdin?.end();
+  } catch {
+    /* ignore */
+  }
+  if (proc.pid && !proc.killed) {
+    try {
+      process.kill(-proc.pid, 'SIGTERM');
+    } catch {
+      try {
+        proc.kill('SIGTERM');
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+}
+
+function talkClaude(room: Room, text: string): { spawned: boolean } {
+  let spawned = false;
+  if (!currentClaude || currentClaude.killed || currentClaude.exitCode !== null) {
+    currentClaude = spawnClaude(room);
+    spawned = true;
+  }
+  writeUserTurn(currentClaude, text);
+  return { spawned };
+}
+
+function resetClaude(): boolean {
+  if (!currentClaude || currentClaude.killed) return false;
+  killClaude(currentClaude);
+  currentClaude = null;
+  return true;
 }
 
 export class Agent extends voice.Agent {
@@ -126,7 +177,8 @@ CRITICAL TOOL POLICY — read carefully:
 Rules:
 - User asks to change the demo button color -> call setButtonColor with a CSS color (hex or named).
 - User wants to swap/trade/exchange tokens (e.g. "swap 1 ETH to USDC") -> call showSwapWidget. Default fromToken="ETH", toToken="USDC", amount=1.
-- User asks for research, summary, repo info, code investigation, "look this up", "explain this codebase", or any onchain question (wallets, transactions, tokens, balances, contracts, ENS, blocks on Ethereum/Base/Arbitrum/etc.) -> call askClaude with the user's prompt verbatim. Claude has the Blockscout MCP for live blockchain data. Do NOT answer yourself.
+- User asks for research, summary, repo info, code investigation, "look this up", "explain this codebase", any onchain request (read or write: wallets, transactions, tokens, balances, contracts, ENS, blocks, deposits, swaps, transfers, etc. on any chain or testnet), OR is replying to a clarifying question Claude asked -> call talkToClaude. There is ONE persistent Claude session per call; every utterance routes there as a new user turn. No separate "new task" tool. Pass the user's utterance EXACTLY: same language, wording, imperative mood, named entities (chain, testnet, protocol, tool, token), amounts, modifiers. Do NOT translate, paraphrase, summarize, or rephrase. Do NOT answer yourself.
+- User explicitly says "reset Claude", "start over", "new Claude session", "forget all that" -> call resetClaude (kills the live session; next talkToClaude spawns fresh).
 
 Keep spoken replies short and crypto-bro energetic AFTER tool calls. Speak in English unless user speaks another language.`,
 
@@ -161,20 +213,37 @@ Keep spoken replies short and crypto-bro energetic AFTER tool calls. Speak in En
           },
         }),
 
-        askClaude: llm.tool({
+        talkToClaude: llm.tool({
           description:
-            'Delegate a research, coding, or investigation task to Claude Code (headless). Returns immediately; Claude streams its progress live to the UI panel on the right. Use for any "look this up", "research", "summarize", "explain this repo", or coding-style ask.',
+            'Send a user turn to the persistent Claude Code session. Lazy-spawns the session on first call, then reuses it for every subsequent turn (research, follow-ups, clarifications). Streams progress live to the UI panel on the right.',
           parameters: z.object({
-            prompt: z
+            message: z
               .string()
-              .describe("The user's task, copied roughly verbatim, in a single sentence."),
+              .describe(
+                "The user's utterance copied EXACTLY. Preserve language, wording, imperative mood, named entities (chains, protocols, tools, tokens), amounts, modifiers. Do NOT translate, paraphrase, summarize, or rephrase.",
+              ),
           }),
-          execute: async ({ prompt }) => {
-            console.log(`[tool askClaude] firing prompt=${JSON.stringify(prompt)}`);
-            const startResult = await rpc(room, 'claudeStart', { prompt });
-            console.log(`[tool askClaude] claudeStart rpc -> ${startResult}`);
-            startClaude(room, prompt);
-            return `Delegated to Claude: "${prompt}". Working in the background.`;
+          execute: async ({ message }) => {
+            console.log(`[tool talkToClaude] message=${JSON.stringify(message)}`);
+            const { spawned } = talkClaude(room, message);
+            if (spawned) {
+              const startResult = await rpc(room, 'claudeStart', { prompt: message });
+              console.log(`[tool talkToClaude] claudeStart rpc -> ${startResult}`);
+            } else {
+              await rpc(room, 'claudeAppend', { text: `\n\n> 💬 _user: ${message}_\n\n` });
+            }
+            return `Sent to Claude: "${message}". Working in the background.`;
+          },
+        }),
+
+        resetClaude: llm.tool({
+          description:
+            'Kill the current Claude Code session so the next talkToClaude starts a fresh one. Only use when the user explicitly asks to reset, start over, or wipe context.',
+          parameters: z.object({}),
+          execute: async () => {
+            const killed = resetClaude();
+            await rpc(room, 'claudeReset', {});
+            return killed ? 'Claude session reset.' : 'No active Claude session to reset.';
           },
         }),
       },
