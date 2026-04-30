@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wishd — defi by wishing it</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Caveat:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #FBF4E8;
+  --bg-2:     #F4EAD5;
+  --surface:  #FFFCF3;
+  --surface-2:#FFFFFF;
+  --ink:      #1F1B16;
+  --ink-2:    #5A4F40;
+  --ink-3:    #9A8E78;
+  --accent:   #E89A6B;
+  --accent-2: #FFD9C2;
+  --mint:     #B8E6C9;
+  --mint-2:   #DCF1E2;
+  --pink:     #F5C2C7;
+  --warn:     #F5DC8A;
+  --warn-2:   #FAEEBC;
+  --good:     #9FD9B0;
+  --bad:      #E89999;
+  --rule:     #E5DAC0;
+  --shadow:   rgba(31,27,22,0.08);
+  --r-sm:     6px;
+  --r:        12px;
+  --r-lg:     20px;
+  --r-pill:   999px;
+}
+
+html { background: var(--bg); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; color: var(--ink); }
+body {
+  min-height: 100vh; position: relative; overflow-x: hidden;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(232,154,107,0.07) 0, rgba(232,154,107,0.07) 280px, transparent 281px),
+    radial-gradient(circle at 88% 78%, rgba(184,230,201,0.1) 0, rgba(184,230,201,0.1) 320px, transparent 321px),
+    radial-gradient(circle at 50% 110%, rgba(245,220,138,0.08) 0, rgba(245,220,138,0.08) 380px, transparent 381px),
+    var(--bg);
+}
+
+/* ── layout ── */
+.page { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 0 20px 80px; }
+
+/* ── header ── */
+header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 0 18px;
+  border-bottom: 1.5px dashed var(--rule);
+  margin-bottom: 28px;
+}
+.logo { font-family: 'Caveat', cursive; font-size: 38px; font-weight: 700; color: var(--ink); line-height: 1; letter-spacing: -0.5px; }
+.logo-dot { display: inline-block; width: 9px; height: 9px; background: var(--accent); border: 2px solid var(--ink); border-radius: 50%; margin-left: 2px; vertical-align: middle; }
+.tagline { font-size: 13px; color: var(--ink-3); margin-left: 2px; }
+.wallet-pill {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px 6px 6px;
+  border: 1.5px solid var(--ink); border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: 2px 2px 0 var(--ink);
+  font-size: 13px; font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+}
+.wallet-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--mint); border: 1.5px solid var(--ink); }
+.wallet-addr { font-weight: 500; }
+.wallet-chain { color: var(--ink-3); font-size: 11px; }
+
+/* ── step card ── */
+.step-card {
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 22px;
+  padding: 20px 24px 22px;
+  margin-bottom: 0;
+  box-shadow: 4px 4px 0 var(--ink);
+  animation: fadeUp 0.25s ease forwards;
+  position: relative;
+}
+.step-card.locked {
+  opacity: 0.92;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.step-card.locked .step-body { pointer-events: none; }
+#stepsContainer { display: flex; flex-direction: column; gap: 24px; }
+
+.step-head {
+  display: flex; align-items: baseline; gap: 12px;
+  margin-bottom: 4px;
+}
+.step-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.1em;
+  background: var(--bg-2); color: var(--ink);
+  border: 1.5px solid var(--ink);
+  padding: 3px 7px; border-radius: 5px;
+  flex-shrink: 0;
+}
+.step-title {
+  font-family: 'Caveat', cursive;
+  font-size: 32px; font-weight: 700;
+  line-height: 1.1;
+  flex: 1;
+}
+.step-status {
+  font-size: 12px; color: var(--ink-3);
+  font-style: italic; flex-shrink: 0;
+}
+.step-status.edit-btn {
+  cursor: pointer; font-size: 12px; font-style: normal;
+  text-decoration: none; color: var(--ink-2);
+  border: 1.5px solid var(--ink); border-radius: 999px;
+  padding: 4px 12px; background: var(--bg);
+}
+.step-sub { font-size: 13.5px; color: var(--ink-2); margin-top: 4px; margin-bottom: 14px; }
+
+/* ── sentence box ── */
+.sentence-box {
+  border: 2px dashed var(--ink);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px 12px;
+  margin-bottom: 14px;
+  background: var(--surface-2);
+}
+.sentence-prefix { font-family: 'Caveat', cursive; font-size: 28px; color: var(--ink); white-space: nowrap; }
+
+/* action pill / dropdown */
+.action-trigger {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--accent); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: var(--r-pill);
+  padding: 3px 14px;
+  font-family: 'Caveat', cursive;
+  font-size: 16px; font-weight: 600;
+  cursor: pointer; user-select: none; white-space: nowrap;
+  transition: background 0.15s;
+}
+.action-trigger:hover { background: #d4885a; }
+.action-trigger.empty { background: var(--surface-2); color: var(--ink-3); }
+.action-trigger svg { width: 12px; height: 12px; }
+
+.action-dropdown {
+  position: absolute; top: calc(100% + 6px); left: 0;
+  background: var(--surface-2); border: 2px solid var(--ink);
+  border-radius: var(--r); box-shadow: 4px 4px 0 var(--ink);
+  min-width: 280px; z-index: 100; overflow: hidden;
+  animation: fadeUp 0.15s ease;
+}
+.dropdown-header {
+  padding: 8px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--ink-3);
+  border-bottom: 1px solid var(--rule);
+  display: flex; align-items: center; gap: 8px;
+}
+.dropdown-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; cursor: pointer;
+  transition: background 0.12s;
+  border-bottom: 1px solid var(--rule);
+}
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:hover, .dropdown-item.hovered { background: var(--accent-2); }
+.dropdown-icon {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+  background: var(--surface);
+}
+.dropdown-name { font-weight: 600; font-size: 14px; }
+.dropdown-desc { font-size: 12px; color: var(--ink-3); }
+
+/* field pills */
+.field-amount {
+  display: inline-flex; align-items: center;
+  border: 2px dashed var(--ink); border-radius: var(--r-pill);
+  background: transparent; overflow: hidden;
+  padding: 3px 14px;
+}
+.field-amount input {
+  background: transparent; border: none; outline: none;
+  font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700;
+  color: var(--ink); padding: 0; width: 90px; text-align: center;
+}
+.field-asset {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 2px solid var(--ink); border-radius: var(--r-pill);
+  padding: 3px 14px;
+  font-family: 'Caveat', cursive;
+  font-weight: 600; font-size: 16px; cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.field-asset:hover { opacity: 0.8; }
+.field-asset.from { background: var(--accent); }
+.field-asset.to   { background: var(--mint); }
+.field-asset.chain { background: var(--mint); }
+.field-asset.protocol { background: var(--bg-2); }
+.field-asset.mint { background: var(--mint); }
+.pill-wrap { position: relative; display: inline-flex; }
+.pill-dd {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  min-width: 260px; padding: 6px; border-radius: 14px;
+}
+.pill-dd .pdd-header {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; color: var(--ink-3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 4px 8px 6px;
+}
+.pill-dd .pdd-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 10px; border-radius: 8px;
+  cursor: pointer; font-size: 14px; min-height: 44px;
+  border-bottom: none;
+}
+.pill-dd .pdd-row:hover, .pill-dd .pdd-row.hovered { background: var(--accent-2); }
+.pill-dd .pdd-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pill-dd .pdd-ticker { font-weight: 700; font-size: 14px; color: var(--ink); }
+.pill-dd .pdd-name { font-weight: 400; color: var(--ink-3); font-size: 14px; margin-left: 6px; }
+.pill-dd .pdd-bal { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: var(--ink-2); }
+.asset-dot {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  display: inline-grid; place-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.7px; font-weight: 700; flex: 0 0 auto;
+}
+.asset-dot.eth  { background: #C9D4F5; }
+.asset-dot.usdc { background: #C2D7F0; }
+.asset-dot.dai  { background: #FAE5B0; }
+.asset-dot.wbtc { background: #FAD4A8; }
+.asset-dot.usdt { background: #B0DFCB; }
+.asset-dot.arb  { background: #BAD9F7; }
+.asset-dot.default { background: var(--bg-2); }
+
+.connector { font-size: 14px; color: var(--ink-3); }
+
+/* balance / quick chips */
+.balance-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 13px; color: var(--ink-3); }
+.quick-chip {
+  padding: 2px 10px; border: 1.5px solid var(--rule); border-radius: var(--r-pill);
+  font-size: 12px; cursor: pointer; background: var(--surface-2);
+  transition: all 0.12s;
+}
+.quick-chip:hover { border-color: var(--accent); background: var(--accent-2); color: var(--ink); }
+
+/* AI bubble */
+.ai-bubble { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+.ai-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--mint); border: 1.5px solid var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0; color: var(--ink);
+}
+.ai-msg {
+  flex: 1; background: var(--surface-2);
+  border: 1.5px solid var(--rule); border-radius: 0 var(--r) var(--r) var(--r);
+  padding: 10px 14px; font-size: 14px; line-height: 1.5;
+}
+.ai-msg strong { font-weight: 700; }
+
+/* thinking dots */
+.thinking { display: flex; align-items: center; gap: 8px; padding: 8px 0; color: var(--ink-3); font-size: 13px; }
+.dots span {
+  display: inline-block; width: 5px; height: 5px;
+  border-radius: 50%; background: var(--accent);
+  animation: blink 1.2s ease-in-out infinite;
+}
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* example pills */
+.examples-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; align-items: center; }
+.examples-label { font-size: 13px; color: var(--ink-3); }
+.ex-pill {
+  padding: 5px 12px; border: 1.5px solid var(--rule); border-radius: var(--r-pill);
+  font-size: 12px; cursor: pointer; background: var(--surface-2); color: var(--ink-2);
+  transition: all 0.12s;
+}
+.ex-pill:hover, .ex-pill.active { border-color: var(--ink); background: var(--accent-2); color: var(--ink); }
+
+/* primary / secondary buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 22px; border-radius: var(--r-pill);
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 600;
+  cursor: pointer; border: 2px solid var(--ink); transition: all 0.15s;
+  outline: none;
+}
+.btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn-primary { background: var(--accent); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+.btn-primary:hover { background: #d4885a; }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-ghost { background: transparent; color: var(--ink-2); border-color: var(--rule); }
+.btn-ghost:hover { border-color: var(--ink); color: var(--ink); }
+.btn-mint { background: var(--mint); color: var(--ink); }
+.btn-mint:hover { background: #99d4b4; }
+.btn-full { width: 100%; justify-content: center; font-size: 17px; padding: 13px; }
+.btn-sm { padding: 7px 14px; font-size: 13px; box-shadow: 2px 2px 0 var(--ink); }
+
+.hint { font-size: 12px; color: var(--ink-3); margin-top: 8px; text-align: center; }
+
+/* ── STEP 02 two-column ── */
+.step2-layout { display: grid; grid-template-columns: 1fr 280px; gap: 16px; align-items: start; }
+@media (max-width: 680px) { .step2-layout { grid-template-columns: 1fr; } }
+
+/* widget card */
+.widget-card {
+  background: var(--surface-2); border: 2px solid var(--ink);
+  border-radius: 18px; overflow: hidden;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.widget-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--rule);
+}
+.widget-name { font-family: 'Caveat', cursive; font-size: 20px; font-weight: 700; }
+.widget-badge {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  border: 1px solid var(--rule); border-radius: var(--r-sm);
+  padding: 2px 7px; color: var(--ink-3);
+}
+.pay-section { background: var(--accent-2); padding: 14px 16px; }
+.receive-section { background: var(--mint-2); padding: 14px 16px; }
+.box-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; color: var(--ink-2); margin-bottom: 6px; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center; }
+.box-amount { font-family: 'Caveat', cursive; font-size: 38px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.box-usd { font-size: 12px; color: var(--ink-3); font-family: 'JetBrains Mono', monospace; }
+.box-asset { display: inline-flex; align-items: center; gap: 5px; background: var(--surface-2); border: 1.5px solid var(--ink); border-radius: var(--r-pill); padding: 4px 10px; font-weight: 700; font-size: 14px; float: right; }
+.box-max { font-size: 11px; color: var(--ink-3); font-family: 'JetBrains Mono', monospace; }
+.box-row { display: flex; align-items: flex-end; justify-content: space-between; }
+.swap-dir {
+  display: flex; justify-content: center; align-items: center;
+  padding: 8px; background: var(--surface-2);
+  border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+}
+.swap-dir-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1.5px solid var(--ink); background: var(--surface-2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px; transition: all 0.15s;
+}
+.swap-dir-btn:hover { background: var(--accent-2); transform: rotate(180deg); }
+.stats-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--rule);
+}
+.stat-cell {
+  padding: 10px 14px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+}
+.stat-cell:nth-child(even) { border-right: none; }
+.stat-cell:nth-last-child(-n+2) { border-bottom: none; }
+.stat-k { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 3px; }
+.stat-v { font-family: 'Caveat', cursive; font-size: 17px; font-weight: 700; }
+.widget-cta { padding: 14px 16px; border-top: 1px solid var(--rule); }
+
+/* lend widget extras */
+.apy-row { display: flex; gap: 8px; padding: 14px 16px; background: var(--bg); border-bottom: 1px solid var(--rule); }
+.apy-stat { flex: 1; text-align: center; }
+.apy-val { font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700; color: var(--ink); }
+.apy-key { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--ink-3); margin-top: 2px; text-transform: uppercase; }
+.amount-section { padding: 14px 16px; border-bottom: 1px solid var(--rule); }
+.amount-wrap { position: relative; margin-bottom: 8px; }
+.amount-big {
+  font-family: 'Caveat', cursive; font-size: 36px; font-weight: 700;
+  background: none; border: none; border-bottom: 2px dashed var(--rule);
+  outline: none; width: 100%; color: var(--ink); padding-bottom: 4px;
+}
+.slider { width: 100%; accent-color: var(--accent); margin-top: 8px; }
+.yield-preview { font-size: 13px; color: var(--ink-3); padding: 10px 16px; border-bottom: 1px solid var(--rule); }
+.yield-val { color: var(--ink); font-weight: 600; }
+
+/* vault list */
+.vault-list { padding: 10px 16px; }
+.vault-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border: 1.5px solid var(--rule);
+  border-radius: var(--r-sm); margin-bottom: 8px; cursor: pointer;
+  transition: all 0.12s; background: var(--surface-2);
+}
+.vault-row:hover { border-color: var(--accent); background: var(--accent-2); }
+.vault-row.selected { border-color: var(--ink); background: var(--accent-2); }
+.vault-name { font-weight: 600; font-size: 14px; flex: 1; }
+.vault-apy { font-family: 'Caveat', cursive; font-size: 20px; font-weight: 700; color: var(--ink); }
+.vault-sub { font-size: 11px; color: var(--ink-3); }
+.vault-check { width: 18px; height: 18px; border: 1.5px solid var(--rule); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+.vault-row.selected .vault-check { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+/* bridge widget */
+.bridge-chains {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: 10px; padding: 14px 16px;
+  border-bottom: 1px solid var(--rule); background: var(--bg);
+}
+.chain-box { text-align: center; padding: 10px; background: var(--surface-2); border: 1px solid var(--rule); border-radius: var(--r-sm); }
+.chain-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--ink-3); margin-bottom: 4px; text-transform: uppercase; }
+.chain-name { font-weight: 600; font-size: 13px; }
+.chain-arrow { font-size: 18px; color: var(--ink-3); }
+
+/* borrow extras */
+.health-row { display: flex; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--rule); background: var(--warn-2); }
+
+/* ── AI check panel ── */
+.ai-panel {
+  border: 1.5px dashed var(--ink); border-radius: 16px;
+  background: var(--bg); padding: 16px;
+}
+.ai-panel-title { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.ai-live { color: var(--accent); font-size: 12px; font-style: italic; }
+.ai-panel-sub { font-size: 12px; color: var(--ink-3); margin-bottom: 14px; }
+.ai-section-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+.balance-change {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border: 1.5px dashed var(--rule);
+  border-radius: var(--r-sm); margin-bottom: 6px; font-size: 13px;
+}
+.balance-change.out { background: #FDEAEA; border-color: var(--bad); }
+.balance-change.in  { background: var(--mint-2); border-color: var(--mint); }
+.bc-sign { font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.bc-token { flex: 1; font-weight: 500; }
+.bc-amount { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; }
+.safety-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  font-size: 13px; margin-bottom: 7px; line-height: 1.4;
+}
+.safety-check {
+  width: 18px; height: 18px; border-radius: 4px;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+}
+.safety-check.ok   { background: var(--good); color: var(--ink); }
+.safety-check.warn { background: var(--warn); color: var(--ink); }
+.safety-check.bad  { background: var(--bad); color: var(--ink); }
+.ai-divider { height: 1px; background: var(--rule); margin: 12px 0; }
+.allowance-action { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+
+/* ── STEP 03 execution ── */
+.exec-steps { display: flex; flex-direction: column; gap: 0; }
+.exec-step {
+  display: grid; grid-template-columns: 32px 1fr auto;
+  gap: 14px; align-items: center;
+  padding: 12px 0; border-bottom: 1.5px solid var(--rule);
+  opacity: 0.4; transition: opacity 0.2s;
+}
+.exec-step:last-child { border-bottom: none; }
+.exec-step.active, .exec-step.done { opacity: 1; }
+.exec-icon {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--rule);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-family: 'JetBrains Mono', monospace;
+  transition: all 0.2s;
+}
+.exec-step.done .exec-icon  { background: var(--good); border-color: var(--ink); }
+.exec-step.active .exec-icon { background: var(--accent-2); border-color: var(--accent); animation: pulse 1.4s ease infinite; }
+.exec-info { flex: 1; }
+.exec-title { font-weight: 600; font-size: 14px; font-family: 'Caveat', cursive; font-size: 17px; }
+.exec-sub { font-size: 12px; color: var(--ink-3); }
+.exec-status { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-3); flex-shrink: 0; }
+.exec-step.done .exec-status { color: var(--ink-2); }
+.exec-step.active .exec-status { color: var(--accent); font-style: italic; }
+
+/* ── Signature modal ── */
+.modal-backdrop {
+  position: absolute; inset: 0; background: rgba(31,27,22,0.3);
+  border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10; animation: fadeUp 0.2s ease;
+}
+.modal-card {
+  background: var(--surface-2); border: 2px solid var(--ink);
+  border-radius: var(--r); box-shadow: 6px 6px 0 var(--ink);
+  padding: 20px 24px; min-width: 300px; max-width: 360px;
+}
+.modal-title { font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.modal-network { font-size: 12px; color: var(--ink-3); margin-bottom: 14px; font-family: 'JetBrains Mono', monospace; }
+.modal-row { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 13px; }
+.modal-row:last-of-type { border-bottom: none; margin-bottom: 14px; }
+.modal-key { color: var(--ink-3); font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; }
+.modal-val { font-weight: 500; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.modal-btns { display: flex; gap: 10px; }
+
+/* ── STEP 04 complete ── */
+.step4-layout { display: grid; grid-template-columns: 1fr 240px; gap: 20px; align-items: start; }
+@media (max-width: 640px) { .step4-layout { grid-template-columns: 1fr; } }
+.workflows-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; }
+.wf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.wf-card {
+  background: var(--surface-2); border: 1.5px solid var(--rule);
+  border-radius: var(--r-sm); padding: 14px;
+  transition: border-color 0.12s;
+}
+.wf-card.featured { border-color: var(--ink); }
+.wf-kh-badge {
+  display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  border: 1px solid var(--rule); border-radius: 4px; padding: 1px 6px;
+  color: var(--ink-3); margin-bottom: 6px;
+}
+.wf-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.wf-desc { font-size: 12px; color: var(--ink-3); margin-bottom: 10px; line-height: 1.4; }
+.wf-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn-wf-deploy { background: var(--accent); border-color: var(--ink); border-radius: var(--r-pill); padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--ink); transition: all 0.12s; }
+.btn-wf-deploy:hover { background: #d4885a; }
+.btn-wf-deploy.deployed { background: var(--good); }
+.btn-wf-custom { background: transparent; border: 1.5px solid var(--rule); border-radius: var(--r-pill); padding: 5px 12px; font-size: 12px; cursor: pointer; color: var(--ink-2); transition: all 0.12s; }
+.btn-wf-custom:hover { border-color: var(--ink); }
+.permission-banner {
+  background: var(--warn-2); border: 1.5px solid var(--warn);
+  border-radius: var(--r-sm); padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px; font-size: 13px;
+}
+.perm-icon { font-size: 20px; flex-shrink: 0; }
+.perm-text { flex: 1; line-height: 1.4; }
+.perm-text strong { font-weight: 600; display: block; margin-bottom: 2px; }
+.perm-text span { color: var(--ink-3); font-size: 12px; }
+
+/* summary panel */
+.summary-panel { background: var(--surface-2); border: 1.5px dashed var(--rule); border-radius: var(--r); padding: 16px; }
+.summary-title { font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+.summary-sub { font-size: 12px; color: var(--ink-3); margin-bottom: 14px; }
+.summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 13px; }
+.summary-row:last-of-type { border-bottom: none; margin-bottom: 14px; }
+.summary-key { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; color: var(--ink-3); }
+.summary-val { font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.tx-link { color: var(--ink); text-decoration: none; }
+.tx-link:hover { text-decoration: underline; }
+
+/* ── animations ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232,154,107,0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(232,154,107,0); }
+}
+@keyframes pop {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="logo">wishd<span class="logo-dot"></span></div>
+    <div class="tagline">defi by wishing it</div>
+    <div class="wallet-pill">
+      <div class="wallet-avatar"></div>
+      <div>
+        <div class="wallet-addr">0x7A4f3D...E9c2</div>
+        <div class="wallet-chain">Ethereum Sepolia</div>
+      </div>
+    </div>
+  </header>
+
+  <div id="stepsContainer">
+    <!-- Step 01 injected by JS -->
+  </div>
+</div>
+
+<!-- Signature modal template (hidden) -->
+<div id="sigModal" style="display:none"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════ DATA ═══ */
+const ASSETS   = ['ETH','USDC','USDT','DAI','WBTC','ARB','MATIC','OP'];
+const ASSETS_META = {
+  ETH:  {name:'Ether',       bal:'0.842'},
+  USDC: {name:'USD Coin',    bal:'1,248.55'},
+  USDT: {name:'Tether',      bal:'84.2'},
+  DAI:  {name:'Dai',         bal:'320'},
+  WBTC: {name:'Wrapped BTC', bal:'0.014'},
+  ARB:  {name:'Arbitrum',    bal:'412'},
+  MATIC:{name:'Polygon',     bal:'—'},
+  OP:   {name:'Optimism',    bal:'—'}
+};
+const CHAINS   = ['Ethereum Mainnet','Ethereum Sepolia','Base','Arbitrum One','Optimism','Polygon'];
+const PROTOCOLS = {
+  lend:   ['Compound V3','Aave V3','Morpho','Spark'],
+  borrow: ['Aave V3','Compound V3','Euler','Morpho'],
+};
+const ACTION_META = {
+  swap:        { icon: '⇌', label: 'swap',          desc: 'exchange one token for another' },
+  lend:        { icon: '↑', label: 'lend',          desc: 'supply tokens to earn yield' },
+  borrow:      { icon: '↓', label: 'borrow',        desc: 'against collateral' },
+  earn:        { icon: '%', label: 'earn yield on', desc: 'auto-route best APY' },
+  bridge:      { icon: '⇆', label: 'bridge',        desc: 'cross-chain transfer' },
+  'find-vault':{ icon: 'Σ', label: 'find vault for',desc: 'best risk-adjusted yield' },
+};
+const ASSET_CLASS = { ETH:'eth', USDC:'usdc', DAI:'dai', WBTC:'wbtc', USDT:'usdt', ARB:'arb' };
+const ASSET_SYM   = { ETH:'Ξ', USDC:'$', DAI:'◈', WBTC:'₿', USDT:'₮', ARB:'◆', MATIC:'◎', OP:'●' };
+
+const EXAMPLES = [
+  { id:'swap-eth-usdc', label:'swap 0.1 ETH → USDC on Sepolia',  action:'swap',        fields:{ amount:'0.1',  assetIn:'ETH',  assetOut:'USDC', chain:'Ethereum Sepolia' }},
+  { id:'lend-usdc',     label:'lend 100 USDC on Compound',        action:'lend',        fields:{ amount:'100',  asset:'USDC',   protocol:'Compound V3', chain:'Ethereum Sepolia' }},
+  { id:'borrow-eth',    label:'borrow ETH against USDC',          action:'borrow',      fields:{ amount:'0.05', asset:'ETH',    collateral:'USDC', protocol:'Aave V3', chain:'Ethereum Sepolia' }},
+  { id:'earn-yield',    label:'earn yield on USDC',               action:'earn',        fields:{ amount:'500',  asset:'USDC',   chain:'Ethereum Mainnet' }},
+  { id:'bridge-eth',    label:'bridge 0.05 ETH → Base',           action:'bridge',      fields:{ amount:'0.05', asset:'ETH',    fromChain:'Ethereum Mainnet', toChain:'Base' }},
+  { id:'find-vault',    label:'find best USDC vault',             action:'find-vault',  fields:{ asset:'USDC',  chain:'Ethereum Mainnet' }},
+];
+
+const AI_MESSAGES = {
+  swap:        f => `Got it — swap <strong>${f.amount} ${f.assetIn} → ${f.assetOut}</strong> on ${f.chain}. Current ${f.assetIn} price ≈ $2,847. Looks good?`,
+  lend:        f => `Got it — supply <strong>${f.amount} ${f.asset}</strong> to ${f.protocol} on ${f.chain}. Current APY is 4.2%. Looks good?`,
+  borrow:      f => `Got it — borrow <strong>${f.amount} ${f.asset}</strong> against ${f.collateral} on ${f.protocol}. Max LTV is 80%. Looks good?`,
+  earn:        f => `Got it — find best yield for <strong>${f.amount} ${f.asset}</strong> on ${f.chain}. Best rate is 6.1% on Morpho. Looks good?`,
+  bridge:      f => `Got it — bridge <strong>${f.amount} ${f.asset}</strong> from ${f.fromChain} → ${f.toChain} via Across. Est. 3–5 min. Looks good?`,
+  'find-vault':f => `Got it — scanning best <strong>${f.asset}</strong> vaults on ${f.chain}. Comparing APY, TVL, and risk. Looks good?`,
+};
+
+const KEEPER_WORKFLOWS = {
+  swap: [
+    { title:'Earn on idle tokens',   desc:`Auto-deposit received tokens into best APY protocol, rebalance weekly.`, featured:true },
+    { title:'Range alert',           desc:`Notify if price moves ±15% — chance to swap back at better rate.`, featured:false },
+    { title:'DCA back',              desc:`Drip tokens back at regular intervals until target allocation is reached.`, featured:false },
+    { title:'Liquidation protection',desc:`Auto-repay borrow if health factor drops below 1.3.`, featured:false },
+  ],
+  lend: [
+    { title:'Auto-compound yield',   desc:`Reinvest earned interest daily for maximum APY.`, featured:true },
+    { title:'Rate optimizer',        desc:`Move supply to highest-APY protocol automatically each week.`, featured:false },
+    { title:'Utilization alert',     desc:`Notify if pool utilization spikes — impacting your rate.`, featured:false },
+    { title:'Withdraw protection',   desc:`Auto-withdraw if APY drops below your target rate.`, featured:false },
+  ],
+  borrow: [
+    { title:'Liquidation guard',     desc:`Auto-repay portion of debt if health factor drops below 1.3.`, featured:true },
+    { title:'Health factor alert',   desc:`Notify when health factor drops below 1.5.`, featured:false },
+    { title:'Position manager',      desc:`Maintain collateral ratio in safe zone automatically.`, featured:false },
+    { title:'Rate monitor',          desc:`Alert if borrow APY spikes above your threshold.`, featured:false },
+  ],
+  earn: [
+    { title:'Auto-compound yield',   desc:`Reinvest earned interest daily for maximum APY.`, featured:true },
+    { title:'Rate optimizer',        desc:`Move to highest-APY vault automatically each week.`, featured:false },
+    { title:'Risk rebalancer',       desc:`Shift to safer vault if protocol risk score changes.`, featured:false },
+    { title:'Withdrawal trigger',    desc:`Auto-withdraw when yield drops below target.`, featured:false },
+  ],
+  bridge: [
+    { title:'Cross-chain yield',     desc:`Auto-deploy bridged assets into best yield on destination chain.`, featured:true },
+    { title:'Rate alert',            desc:`Notify if bridge fees spike — wait for cheaper window.`, featured:false },
+    { title:'Return bridge',         desc:`Auto-bridge back when price on origin chain is favorable.`, featured:false },
+    { title:'Multi-hop optimizer',   desc:`Find cheapest multi-hop route automatically.`, featured:false },
+  ],
+  'find-vault': [
+    { title:'Auto-compound yield',   desc:`Reinvest earned interest daily for maximum APY.`, featured:true },
+    { title:'Rate optimizer',        desc:`Move to highest-APY vault automatically each week.`, featured:false },
+    { title:'Risk rebalancer',       desc:`Shift to safer vault if protocol risk score changes.`, featured:false },
+    { title:'Withdrawal trigger',    desc:`Auto-withdraw when yield drops below target.`, featured:false },
+  ],
+};
+
+/* ═══════════════════════════════════════════════════════════ STATE ═══ */
+const state = {
+  action: '',
+  fields: {},
+  currentStep: 0,
+  usedPermit2: false,
+  skipApproveStep: false,
+  txRunning: false,
+  permissionGranted: false,
+};
+
+/* ═══════════════════════════════════════════════════════════ UTILS ═══ */
+function assetDot(token) {
+  const cls = ASSET_CLASS[token] || 'default';
+  const sym = ASSET_SYM[token] || token[0];
+  return `<div class="asset-dot ${cls}">${sym}</div>`;
+}
+
+function needsApproval(action, fields) {
+  const f = fields;
+  if (action==='swap')        return (f.assetIn||'ETH')!=='ETH';
+  if (action==='lend')        return (f.asset||'USDC')!=='ETH';
+  if (action==='borrow')      return (f.collateral||'USDC')!=='ETH';
+  if (action==='earn')        return (f.asset||'USDC')!=='ETH';
+  if (action==='bridge')      return (f.asset||'ETH')!=='ETH';
+  if (action==='find-vault')  return (f.asset||'USDC')!=='ETH';
+  return false;
+}
+function approvalAsset(action, fields) {
+  const f = fields;
+  if (action==='swap')   return f.assetIn   || 'USDC';
+  if (action==='borrow') return f.collateral|| 'USDC';
+  return f.asset || 'USDC';
+}
+function spenderFor(action) {
+  return { swap:'Uniswap V3 Router', lend:'Compound V3', borrow:'Aave V3', earn:'Morpho Optimizer', bridge:'Across Protocol', 'find-vault':'Morpho Optimizer' }[action] || 'Protocol Router';
+}
+function hasAllowance(asset, spender) {
+  try { return JSON.parse(localStorage.getItem('w_allowances')||'{}')[asset+':'+spender]===true; } catch(e){ return false; }
+}
+function setAllowance(asset, spender) {
+  try { const a=JSON.parse(localStorage.getItem('w_allowances')||'{}'); a[asset+':'+spender]=true; localStorage.setItem('w_allowances',JSON.stringify(a)); } catch(e){}
+}
+function scrollTo(el) { setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),80); }
+
+/* ═══════════════════════════════════════════════════════════ STEPS ═══ */
+function lockStep(n) {
+  const card = document.getElementById('step'+n);
+  if (!card) return;
+  card.classList.add('locked');
+  const st = card.querySelector('.step-status');
+  if (st) { st.textContent='edit ✎'; st.classList.add('edit-btn'); st.onclick=()=>unlockStep(n); }
+}
+function unlockStep(n) {
+  // Remove all steps after n
+  for (let i=n+1; i<=4; i++) { const c=document.getElementById('step'+i); if(c) c.remove(); }
+  state.currentStep=n;
+  state.txRunning=false;
+  state.usedPermit2=false;
+  state.skipApproveStep=false;
+  state.permissionGranted=false;
+  if(n===1) setExamplesVisible(true);
+  const card=document.getElementById('step'+n);
+  if (card) {
+    card.classList.remove('locked');
+    const st=card.querySelector('.step-status');
+    if(st){ st.textContent='in progress'; st.classList.remove('edit-btn'); st.onclick=null; }
+  }
+}
+
+function appendStep(html, id) {
+  const container = document.getElementById('stepsContainer');
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  const card = tmp.firstElementChild;
+  container.appendChild(card);
+  scrollTo(card);
+}
+
+/* ═══════════════════════════════════════════════════════════ STEP 01 ═══ */
+function buildStep1() {
+  return `<div class="step-card" id="step1">
+  <div class="step-head">
+    <span class="step-badge">STEP 01</span>
+    <h2 class="step-title">describe your wish</h2>
+    <span class="step-status">in progress</span>
+  </div>
+  <p class="step-sub">pick an action — we pre-fill the rest</p>
+  <div class="step-body">
+    <div class="sentence-box" id="sentenceBox">
+      <span class="sentence-prefix">I want to</span>
+      <div style="position:relative" id="actionWrap">
+        <div class="action-trigger empty" id="actionTrigger" onclick="toggleDropdown()">
+          <svg viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 1l4 4 4-4"/></svg>
+          <span id="actionLabel">pick action</span>
+        </div>
+        <div class="action-dropdown" id="actionDropdown" style="display:none">
+          <div class="dropdown-header">6 MATCHES · ↑↓ ↵</div>
+          ${Object.entries(ACTION_META).map(([k,v])=>`
+            <div class="dropdown-item" onclick="selectAction('${k}')">
+              <div class="dropdown-icon">${v.icon}</div>
+              <div><div class="dropdown-name">${v.label}</div><div class="dropdown-desc">${v.desc}</div></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div id="dynamicFields" style="display:contents"></div>
+    </div>
+
+    <div id="balanceRow" style="display:none" class="balance-row">
+      balance · <span id="balanceAmt">0.842 ETH</span>
+      <div class="quick-chip" onclick="setQuick(0.10)">10%</div>
+      <div class="quick-chip" onclick="setQuick(0.25)">25%</div>
+      <div class="quick-chip" onclick="setQuick(0.50)">50%</div>
+      <div class="quick-chip" onclick="setQuick(0.75)">75%</div>
+      <div class="quick-chip" onclick="setQuick(1.00)">100%</div>
+    </div>
+
+    <div class="examples-row" id="examplesRow">
+      <span class="examples-label">or try:</span>
+      ${EXAMPLES.map(e=>`<div class="ex-pill" id="ex-${e.id}" onclick="loadExample('${e.id}')">${e.label}</div>`).join('')}
+    </div>
+
+    <div id="aiBubble" style="display:none" class="ai-bubble">
+      <div class="ai-avatar">ai</div>
+      <div class="ai-msg" id="aiMsgText"></div>
+    </div>
+
+    <div id="step1Btns">
+      <button class="btn btn-primary" id="looksGoodBtn" onclick="onLooksGood()" disabled>looks good →</button>
+      <span class="hint" style="display:inline-block;margin-left:12px">or click any pill above to change it</span>
+    </div>
+  </div>
+</div>`;
+}
+
+/* ── action dropdown ── */
+function toggleDropdown() {
+  const dd=document.getElementById('actionDropdown');
+  dd.style.display = dd.style.display==='none' ? 'block' : 'none';
+}
+document.addEventListener('click', e=>{
+  document.querySelectorAll('.pill-wrap').forEach(pw=>{
+    if(!pw.contains(e.target)) {
+      const dd=pw.querySelector('.pill-dd');
+      if(dd) dd.style.display='none';
+    }
+  });
+  const wrap=document.getElementById('actionWrap');
+  if(wrap && !wrap.contains(e.target)) {
+    const dd=document.getElementById('actionDropdown');
+    if(dd) dd.style.display='none';
+  }
+});
+
+function setExamplesVisible(v) {
+  const row=document.getElementById('examplesRow'); if(row) row.style.display=v?'flex':'none';
+}
+
+function selectAction(action) {
+  document.getElementById('actionDropdown').style.display='none';
+  state.action=action;
+  state.fields={};
+  setExamplesVisible(false);
+  const t=document.getElementById('actionTrigger');
+  t.classList.remove('empty');
+  document.getElementById('actionLabel').textContent=ACTION_META[action].label;
+  renderDynamicFields();
+  updateAiBubble();
+}
+
+/* ── dynamic fields ── */
+function ddHeader(n){ return `<div class="pdd-header">${n} matches · ↑↓ ↵</div>`; }
+
+function assetPill(id, value, cls, fieldKey) {
+  const items = ASSETS.map(opt=>{
+    const m=ASSETS_META[opt]||{name:opt,bal:'—'};
+    return `<div class="pdd-row" onclick="event.stopPropagation();pickValue('${id}','${fieldKey}','${opt}')">
+       <div class="pdd-left">
+         ${assetDot(opt)}
+         <span><span class="pdd-ticker">${opt}</span><span class="pdd-name">${m.name}</span></span>
+       </div>
+       <span class="pdd-bal">${m.bal}</span>
+     </div>`;
+  }).join('');
+  return `<span class="pill-wrap">
+    <div class="field-asset ${cls}" onclick="event.stopPropagation();togglePicker('${id}')">
+      ${assetDot(value)}<span id="${id}-label">${value}</span>
+    </div>
+    <div class="action-dropdown pill-dd" id="${id}-dd" style="display:none">${ddHeader(ASSETS.length)}${items}</div>
+  </span>`;
+}
+function chainPill(id, value, fieldKey, cls) {
+  cls = cls || 'chain';
+  const items = CHAINS.map(opt=>
+    `<div class="pdd-row" onclick="event.stopPropagation();pickValue('${id}','${fieldKey}','${opt}')">
+       <span class="pdd-ticker">${opt}</span>
+     </div>`).join('');
+  return `<span class="pill-wrap">
+    <div class="field-asset ${cls}" onclick="event.stopPropagation();togglePicker('${id}')"><span id="${id}-label">${value}</span></div>
+    <div class="action-dropdown pill-dd" id="${id}-dd" style="display:none">${ddHeader(CHAINS.length)}${items}</div>
+  </span>`;
+}
+function protocolPill(id, value, type) {
+  const opts = PROTOCOLS[type] || [];
+  const items = opts.map(opt=>
+    `<div class="pdd-row" onclick="event.stopPropagation();pickValue('${id}','protocol','${opt}')">
+       <span class="pdd-ticker">${opt}</span>
+     </div>`).join('');
+  return `<span class="pill-wrap">
+    <div class="field-asset protocol" onclick="event.stopPropagation();togglePicker('${id}')"><span id="${id}-label">${value}</span></div>
+    <div class="action-dropdown pill-dd" id="${id}-dd" style="display:none">${ddHeader(opts.length)}${items}</div>
+  </span>`;
+}
+function togglePicker(id) {
+  document.querySelectorAll('.pill-dd').forEach(d=>{ if(d.id!==id+'-dd') d.style.display='none'; });
+  const dd=document.getElementById(id+'-dd');
+  if(dd) dd.style.display = dd.style.display==='none' ? 'block' : 'none';
+}
+function pickValue(triggerId, fieldKey, value) {
+  state.fields[fieldKey]=value;
+  const dd=document.getElementById(triggerId+'-dd');
+  if(dd) dd.style.display='none';
+  renderDynamicFields();
+  updateAiBubble();
+  validateStep1();
+}
+
+function renderDynamicFields() {
+  const a=state.action, f=state.fields;
+  const container=document.getElementById('dynamicFields');
+  const balRow=document.getElementById('balanceRow');
+  let html='';
+
+  if(a==='swap'){
+    const amt=f.amount||'0.1', ai=f.assetIn||'ETH', ao=f.assetOut||'USDC', ch=f.chain||'Ethereum Sepolia';
+    state.fields={amount:amt,assetIn:ai,assetOut:ao,chain:ch};
+    html=`
+      <div class="field-amount"><input id="f_amount" type="number" value="${amt}" step="any" min="0" oninput="onFieldInput('amount',this.value)"></div>
+      ${assetPill('f_assetIn',ai,'from','assetIn')}
+      <span class="connector">to</span>
+      ${assetPill('f_assetOut',ao,'to','assetOut')}
+      <span class="connector">on</span>
+      ${chainPill('f_chain',ch,'chain')}
+    `;
+    balRow.style.display='flex';
+  } else if(a==='lend'){
+    const amt=f.amount||'100', as=f.asset||'USDC', pr=f.protocol||'Compound V3', ch=f.chain||'Ethereum Sepolia';
+    state.fields={amount:amt,asset:as,protocol:pr,chain:ch};
+    html=`
+      <div class="field-amount"><input id="f_amount" type="number" value="${amt}" step="any" min="0" oninput="onFieldInput('amount',this.value)"></div>
+      ${assetPill('f_asset',as,'from','asset')}
+      <span class="connector">on</span>
+      ${protocolPill('f_protocol',pr,'lend')}
+      <span class="connector">on</span>
+      ${chainPill('f_chain',ch,'chain')}
+    `;
+    balRow.style.display='none';
+  } else if(a==='borrow'){
+    const amt=f.amount||'0.05', as=f.asset||'ETH', co=f.collateral||'USDC', pr=f.protocol||'Aave V3', ch=f.chain||'Ethereum Sepolia';
+    state.fields={amount:amt,asset:as,collateral:co,protocol:pr,chain:ch};
+    html=`
+      <div class="field-amount"><input id="f_amount" type="number" value="${amt}" step="any" min="0" oninput="onFieldInput('amount',this.value)"></div>
+      ${assetPill('f_asset',as,'from','asset')}
+      <span class="connector">against</span>
+      ${assetPill('f_collateral',co,'to','collateral')}
+      <span class="connector">on</span>
+      ${protocolPill('f_protocol',pr,'borrow')}
+      ${chainPill('f_chain',ch,'chain')}
+    `;
+    balRow.style.display='none';
+  } else if(a==='earn'){
+    const amt=f.amount||'500', as=f.asset||'USDC', ch=f.chain||'Ethereum Mainnet';
+    state.fields={amount:amt,asset:as,chain:ch};
+    html=`
+      <div class="field-amount"><input id="f_amount" type="number" value="${amt}" step="any" min="0" oninput="onFieldInput('amount',this.value)"></div>
+      ${assetPill('f_asset',as,'from','asset')}
+      <span class="connector">on</span>
+      ${chainPill('f_chain',ch,'chain')}
+    `;
+    balRow.style.display='none';
+  } else if(a==='bridge'){
+    const amt=f.amount||'0.05', as=f.asset||'ETH', fc=f.fromChain||'Ethereum Mainnet', tc=f.toChain||'Base';
+    state.fields={amount:amt,asset:as,fromChain:fc,toChain:tc};
+    html=`
+      <div class="field-amount"><input id="f_amount" type="number" value="${amt}" step="any" min="0" oninput="onFieldInput('amount',this.value)"></div>
+      ${assetPill('f_asset',as,'from','asset')}
+      <span class="connector">from</span>
+      ${chainPill('f_fromChain',fc,'fromChain','chain')}
+      <span class="connector">to</span>
+      ${chainPill('f_toChain',tc,'toChain','mint')}
+    `;
+    balRow.style.display='flex';
+  } else if(a==='find-vault'){
+    const as=f.asset||'USDC', ch=f.chain||'Ethereum Mainnet';
+    state.fields={asset:as,chain:ch};
+    html=`
+      ${assetPill('f_asset',as,'from','asset')}
+      <span class="connector">on</span>
+      ${chainPill('f_chain',ch,'chain')}
+    `;
+    balRow.style.display='none';
+  }
+
+  container.innerHTML=html;
+  validateStep1();
+}
+
+function onFieldInput(key, val) {
+  state.fields[key]=val;
+  updateAiBubble();
+  validateStep1();
+}
+
+function setQuick(pct) {
+  const bal=0.842;
+  const amt=(bal*pct).toFixed(4).replace(/\.?0+$/,'');
+  state.fields.amount=amt;
+  const inp=document.getElementById('f_amount');
+  if(inp) inp.value=amt;
+  updateAiBubble(); validateStep1();
+}
+
+function validateStep1() {
+  const a=state.action, f=state.fields;
+  let valid=false;
+  if(a==='swap')        valid=parseFloat(f.amount)>0 && f.assetIn && f.assetOut && f.chain;
+  else if(a==='lend')   valid=parseFloat(f.amount)>0 && f.asset && f.protocol && f.chain;
+  else if(a==='borrow') valid=parseFloat(f.amount)>0 && f.asset && f.collateral && f.protocol && f.chain;
+  else if(a==='earn')   valid=parseFloat(f.amount)>0 && f.asset && f.chain;
+  else if(a==='bridge') valid=parseFloat(f.amount)>0 && f.asset && f.fromChain && f.toChain;
+  else if(a==='find-vault') valid=f.asset && f.chain;
+  const btn=document.getElementById('looksGoodBtn');
+  if(btn) btn.disabled=!valid;
+  return valid;
+}
+
+function updateAiBubble() {
+  const valid = validateStep1();
+  if(!valid) { const b=document.getElementById('aiBubble'); if(b) b.style.display='none'; return; }
+  const bubble=document.getElementById('aiBubble');
+  const msg=document.getElementById('aiMsgText');
+  if(!bubble||!msg) return;
+  bubble.style.display='flex';
+  msg.innerHTML=(AI_MESSAGES[state.action]||AI_MESSAGES.swap)(state.fields);
+}
+
+function loadExample(id) {
+  const eg=EXAMPLES.find(e=>e.id===id); if(!eg) return;
+  document.querySelectorAll('.ex-pill').forEach(p=>p.classList.remove('active'));
+  const pill=document.getElementById('ex-'+id); if(pill) pill.classList.add('active');
+  state.action=eg.action;
+  state.fields={...eg.fields};
+  const t=document.getElementById('actionTrigger');
+  if(t){ t.classList.remove('empty'); document.getElementById('actionLabel').textContent=ACTION_META[eg.action].label; }
+  setExamplesVisible(false);
+  renderDynamicFields();
+  updateAiBubble();
+}
+
+function onLooksGood() {
+  lockStep(1);
+  saveState();
+  buildStep2();
+}
+
+/* ═══════════════════════════════════════════════════════════ STEP 02 ═══ */
+function buildStep2() {
+  const a=state.action, f=state.fields;
+  const labels={swap:'your swap, materialized',lend:'your supply, materialized',borrow:'your borrow, materialized',earn:'your yield position',bridge:'your bridge, ready',['find-vault']:'best vault, found'};
+  const subs={swap:'tweak amounts here. AI re-checks live.',lend:'adjust the supply amount. AI re-checks live.',borrow:'review your borrow. AI re-checks live.',earn:'pick your vault. AI re-checks live.',bridge:'review the bridge. AI re-checks live.',['find-vault']:'pick a vault. AI re-checks live.'};
+
+  const html=`<div class="step-card" id="step2">
+  <div class="step-head">
+    <span class="step-badge">STEP 02</span>
+    <h2 class="step-title">${labels[a]||'materialized'}</h2>
+    <span class="step-status">in progress</span>
+  </div>
+  <p class="step-sub">${subs[a]||''}</p>
+  <div class="step-body">
+    <div class="step2-layout">
+      <div id="widgetArea">${buildWidget(a,f)}</div>
+      <div id="aiCheckArea">${buildAiCheck(a,f)}</div>
+    </div>
+  </div>
+</div>`;
+  appendStep(html,'step2');
+  state.currentStep=2;
+}
+
+function buildWidget(a, f) {
+  if(a==='swap')        return buildSwapWidget(f);
+  if(a==='lend')        return buildLendWidget(f);
+  if(a==='borrow')      return buildBorrowWidget(f);
+  if(a==='earn')        return buildEarnWidget(f);
+  if(a==='bridge')      return buildBridgeWidget(f);
+  if(a==='find-vault')  return buildEarnWidget(f);
+  return '';
+}
+
+function buildSwapWidget(f) {
+  const amt=parseFloat(f.amount||0.1);
+  const amtOut=(amt*3120).toFixed(2);
+  const ctaLabel='execute';
+  return `<div class="widget-card">
+  <div class="widget-head"><span class="widget-name">swap</span><span class="widget-badge">NATIVE · 1 TX</span></div>
+  <div class="pay-section">
+    <div class="box-label">YOU PAY <span class="box-max">max · 0.842</span></div>
+    <div class="box-row">
+      <div>
+        <div class="box-amount"><input id="w_amtIn" type="number" value="${amt}" step="any" style="font-family:Caveat,cursive;font-size:36px;font-weight:700;background:none;border:none;outline:none;width:140px;color:var(--ink)" oninput="onSwapAmtChange(this.value)"></div>
+        <div class="box-usd" id="w_usdIn">≈ $${(amt*3120).toFixed(2)}</div>
+      </div>
+      <div class="box-asset">${assetDot(f.assetIn||'ETH')} ${f.assetIn||'ETH'}</div>
+    </div>
+  </div>
+  <div class="swap-dir"><div class="swap-dir-btn" onclick="flipSwap()">↕</div></div>
+  <div class="receive-section">
+    <div class="box-label">YOU RECEIVE <span style="color:var(--mint);font-weight:600;font-size:11px">~ best route</span></div>
+    <div class="box-row">
+      <div>
+        <div class="box-amount" id="w_amtOut" style="font-family:Caveat,cursive;font-size:36px;font-weight:700">${amtOut}</div>
+        <div class="box-usd" id="w_usdOut">≈ $${amtOut} · impact 0.08%</div>
+      </div>
+      <div class="box-asset">${assetDot(f.assetOut||'USDC')} ${f.assetOut||'USDC'}</div>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-cell"><div class="stat-k">RATE</div><div class="stat-v">1 ${f.assetIn||'ETH'} = 3,120 ${f.assetOut||'USDC'}</div></div>
+    <div class="stat-cell"><div class="stat-k">MIN RECEIVED</div><div class="stat-v" id="w_minOut">${(parseFloat(amtOut)*0.997).toFixed(4)}</div></div>
+    <div class="stat-cell"><div class="stat-k">ROUTE</div><div class="stat-v">Uniswap v3</div></div>
+    <div class="stat-cell"><div class="stat-k">NETWORK FEE</div><div class="stat-v">$1.53</div></div>
+  </div>
+  <div class="widget-cta">
+    <button class="btn btn-primary btn-full" onclick="onExecute()">${ctaLabel} →</button>
+    <div class="hint">1 signature · ${(f.assetIn||'ETH')==='ETH'?'ETH is native, no allowance needed':'ERC-20 · approval may be required'}</div>
+  </div>
+</div>`;
+}
+
+function onSwapAmtChange(v) {
+  const amt=parseFloat(v)||0;
+  const out=(amt*3120).toFixed(2);
+  state.fields.amount=v;
+  const usdIn=document.getElementById('w_usdIn'); if(usdIn) usdIn.textContent=`≈ $${(amt*3120).toFixed(2)}`;
+  const outEl=document.getElementById('w_amtOut'); if(outEl) outEl.textContent=out;
+  const usdOut=document.getElementById('w_usdOut'); if(usdOut) usdOut.textContent=`≈ $${out} · impact 0.08%`;
+  const minOut=document.getElementById('w_minOut'); if(minOut) minOut.textContent=(out*0.997).toFixed(4);
+  refreshAiCheck();
+}
+
+function flipSwap() {
+  [state.fields.assetIn, state.fields.assetOut]=[state.fields.assetOut, state.fields.assetIn];
+  document.getElementById('widgetArea').innerHTML=buildWidget(state.action,state.fields);
+  refreshAiCheck();
+}
+
+function buildLendWidget(f) {
+  const amt=parseFloat(f.amount||100);
+  return `<div class="widget-card">
+  <div class="widget-head"><span class="widget-name">lend</span><span class="widget-badge">ERC-20 · 1–2 TX</span></div>
+  <div class="apy-row">
+    <div class="apy-stat"><div class="apy-val">4.2%</div><div class="apy-key">SUPPLY APY</div></div>
+    <div class="apy-stat"><div class="apy-val">$1.00</div><div class="apy-key">PRICE</div></div>
+    <div class="apy-stat"><div class="apy-val">$48M</div><div class="apy-key">TOTAL SUPPLY</div></div>
+  </div>
+  <div class="amount-section">
+    <div class="box-label">AMOUNT TO SUPPLY</div>
+    <div class="box-row">
+      <input class="amount-big" id="w_lendAmt" type="number" value="${amt}" oninput="onLendAmtChange(this.value)">
+      <div class="box-asset">${assetDot(f.asset||'USDC')} ${f.asset||'USDC'}</div>
+    </div>
+    <input class="slider" type="range" min="0" max="1000" value="${amt}" oninput="onLendSlider(this.value)">
+  </div>
+  <div class="yield-preview" id="w_yieldPreview">
+    Yearly: <span class="yield-val">+$${(amt*0.042).toFixed(2)}</span> · Monthly: <span class="yield-val">+$${(amt*0.042/12).toFixed(2)}</span>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-cell"><div class="stat-k">PROTOCOL</div><div class="stat-v">${f.protocol||'Compound V3'}</div></div>
+    <div class="stat-cell"><div class="stat-k">cTOKEN</div><div class="stat-v">${(amt/22.4).toFixed(4)} cUSDC</div></div>
+    <div class="stat-cell"><div class="stat-k">CHAIN</div><div class="stat-v">${f.chain||'Sepolia'}</div></div>
+    <div class="stat-cell"><div class="stat-k">GAS EST.</div><div class="stat-v">~$4.10</div></div>
+  </div>
+  <div class="widget-cta">
+    <button class="btn btn-primary btn-full" onclick="onExecute()">supply →</button>
+    <div class="hint">ERC-20 · allowance checked before signing</div>
+  </div>
+</div>`;
+}
+function onLendAmtChange(v){state.fields.amount=v;const p=document.getElementById('w_yieldPreview');if(p){const a=parseFloat(v)||0;p.innerHTML=`Yearly: <span class="yield-val">+$${(a*0.042).toFixed(2)}</span> · Monthly: <span class="yield-val">+$${(a*0.042/12).toFixed(2)}</span>`;}refreshAiCheck();}
+function onLendSlider(v){state.fields.amount=v;const i=document.getElementById('w_lendAmt');if(i)i.value=v;onLendAmtChange(v);}
+
+function buildBorrowWidget(f) {
+  const amt=parseFloat(f.amount||0.05);
+  const colReq=(amt*3120/0.8).toFixed(2);
+  return `<div class="widget-card">
+  <div class="widget-head"><span class="widget-name">borrow</span><span class="widget-badge">ERC-20 · 2 TX</span></div>
+  <div class="apy-row">
+    <div class="apy-stat"><div class="apy-val">5.8%</div><div class="apy-key">BORROW APY</div></div>
+    <div class="apy-stat"><div class="apy-val" style="color:var(--accent)">80%</div><div class="apy-key">MAX LTV</div></div>
+    <div class="apy-stat"><div class="apy-val">2.14</div><div class="apy-key">HEALTH FACTOR</div></div>
+  </div>
+  <div class="amount-section">
+    <div class="box-label">BORROW AMOUNT</div>
+    <div class="box-row">
+      <input class="amount-big" type="number" value="${amt}" step="any">
+      <div class="box-asset">${assetDot(f.asset||'ETH')} ${f.asset||'ETH'}</div>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-cell"><div class="stat-k">COLLATERAL</div><div class="stat-v">${f.collateral||'USDC'}</div></div>
+    <div class="stat-cell"><div class="stat-k">REQUIRED</div><div class="stat-v">${colReq} USDC</div></div>
+    <div class="stat-cell"><div class="stat-k">LIQUIDATION</div><div class="stat-v" style="color:var(--accent)">$1,780 ETH</div></div>
+    <div class="stat-cell"><div class="stat-k">GAS EST.</div><div class="stat-v">~$6.50</div></div>
+  </div>
+  <div class="widget-cta">
+    <button class="btn btn-primary btn-full" onclick="onExecute()">borrow →</button>
+    <div class="hint">${f.protocol||'Aave V3'} · collateral lock required</div>
+  </div>
+</div>`;
+}
+
+function buildEarnWidget(f) {
+  const vaults=[
+    {name:'Morpho Optimizer',apy:'6.1%',tvl:'$124M',risk:'Low',selected:true},
+    {name:'Aave V3 USDC',    apy:'4.2%',tvl:'$890M',risk:'Low',selected:false},
+    {name:'Compound V3',     apy:'4.0%',tvl:'$540M',risk:'Low',selected:false},
+    {name:'Yearn USDC',      apy:'7.8%',tvl:'$43M', risk:'Medium',selected:false},
+  ];
+  const action=state.action==='find-vault'?'deposit':'deposit';
+  return `<div class="widget-card">
+  <div class="widget-head"><span class="widget-name">${state.action==='find-vault'?'find vault':'earn yield'}</span><span class="widget-badge">AUTO-ROUTE</span></div>
+  <div class="vault-list">
+    ${vaults.map((v,i)=>`<div class="vault-row ${v.selected?'selected':''}" onclick="selectVault(this)">
+      <div><div class="vault-name">${v.name}</div><div class="vault-sub">TVL ${v.tvl} · Risk: ${v.risk}</div></div>
+      <div class="vault-apy">${v.apy}</div>
+      <div class="vault-check">${v.selected?'✓':''}</div>
+    </div>`).join('')}
+  </div>
+  <div class="amount-section" style="border-top:1px solid var(--rule)">
+    <div class="box-label">AMOUNT TO DEPOSIT</div>
+    <div class="box-row">
+      <input class="amount-big" type="number" value="${f.amount||500}" step="any">
+      <div class="box-asset">${assetDot(f.asset||'USDC')} ${f.asset||'USDC'}</div>
+    </div>
+  </div>
+  <div class="widget-cta">
+    <button class="btn btn-primary btn-full" onclick="onExecute()">${action} →</button>
+    <div class="hint">ERC-20 · allowance checked before signing</div>
+  </div>
+</div>`;
+}
+function selectVault(el){document.querySelectorAll('.vault-row').forEach(r=>{r.classList.remove('selected');r.querySelector('.vault-check').textContent='';});el.classList.add('selected');el.querySelector('.vault-check').textContent='✓';}
+
+function buildBridgeWidget(f) {
+  const amt=parseFloat(f.amount||0.05);
+  return `<div class="widget-card">
+  <div class="widget-head"><span class="widget-name">bridge</span><span class="widget-badge">ACROSS · 1 TX</span></div>
+  <div class="bridge-chains">
+    <div class="chain-box"><div class="chain-label">FROM</div><div class="chain-name">${f.fromChain||'Ethereum Mainnet'}</div></div>
+    <div class="chain-arrow">→</div>
+    <div class="chain-box"><div class="chain-label">TO</div><div class="chain-name">${f.toChain||'Base'}</div></div>
+  </div>
+  <div class="amount-section">
+    <div class="box-label">AMOUNT</div>
+    <div class="box-row">
+      <input class="amount-big" type="number" value="${amt}" step="any">
+      <div class="box-asset">${assetDot(f.asset||'ETH')} ${f.asset||'ETH'}</div>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-cell"><div class="stat-k">EST. TIME</div><div class="stat-v">3–5 min</div></div>
+    <div class="stat-cell"><div class="stat-k">BRIDGE FEE</div><div class="stat-v">0.06%</div></div>
+    <div class="stat-cell"><div class="stat-k">YOU RECEIVE</div><div class="stat-v">${(amt*0.9994).toFixed(4)} ${f.asset||'ETH'}</div></div>
+    <div class="stat-cell"><div class="stat-k">GAS EST.</div><div class="stat-v">~$2.10</div></div>
+  </div>
+  <div class="widget-cta">
+    <button class="btn btn-primary btn-full" onclick="onExecute()">bridge →</button>
+    <div class="hint">${(f.asset||'ETH')==='ETH'?'Native ETH · no approval needed':'ERC-20 · approval may be required'}</div>
+  </div>
+</div>`;
+}
+
+/* ── AI check panel ── */
+function buildAiCheck(a, f) {
+  const approval=needsApproval(a,f);
+  const asset=approvalAsset(a,f);
+  const spender=spenderFor(a);
+  const approved=!approval||hasAllowance(asset,spender);
+
+  // balance changes
+  let changes='';
+  if(a==='swap'){
+    changes=`<div class="balance-change out"><span class="bc-sign">–</span><span class="bc-token">${f.assetIn||'ETH'}</span><span class="bc-amount">-${f.amount||0.1}</span></div>
+    <div class="balance-change out"><span class="bc-sign">–</span><span class="bc-token">gas</span><span class="bc-amount">~-$1.53</span></div>
+    <div class="balance-change in"><span class="bc-sign">+</span><span class="bc-token">${f.assetOut||'USDC'}</span><span class="bc-amount">+${((f.amount||0.1)*3120).toFixed(2)}</span></div>`;
+  } else if(a==='lend'){
+    changes=`<div class="balance-change out"><span class="bc-sign">–</span><span class="bc-token">${f.asset||'USDC'}</span><span class="bc-amount">-${f.amount||100}</span></div>
+    <div class="balance-change out"><span class="bc-sign">–</span><span class="bc-token">gas</span><span class="bc-amount">~-$4.10</span></div>
+    <div class="balance-change in"><span class="bc-sign">+</span><span class="bc-token">cUSDC</span><span class="bc-amount">+${((f.amount||100)/22.4).toFixed(4)}</span></div>`;
+  } else if(a==='borrow'){
+    changes=`<div class="balance-change out"><span class="bc-sign">–</span><span class="bc-token">gas</span><span class="bc-amount">~-$6.50</span></div>
+    <div class="balance-change in"><span class="bc-sign">+</span><span class="bc-token">${f.asset||'ETH'}</span><span class="bc-amount">+${f.amount||0.05}</span></div>`;
+  } else if(a==='earn'||a==='find-vault'){
+    changes=`<div class="balance-change out"><span class="bc-sign">–</span><span class="bc-token">${f.asset||'USDC'}</span><span class="bc-amount">-${f.amount||500}</span></div>
+    <div class="balance-change out"><span class="bc-sign">–</span><span class="bc-token">gas</span><span class="bc-amount">~-$5.80</span></div>
+    <div class="balance-change in"><span class="bc-sign">+</span><span class="bc-token">vault shares</span><span class="bc-amount">+${f.amount||500}</span></div>`;
+  } else if(a==='bridge'){
+    changes=`<div class="balance-change out"><span class="bc-sign">–</span><span class="bc-token">${f.asset||'ETH'} (${f.fromChain||'Mainnet'})</span><span class="bc-amount">-${f.amount||0.05}</span></div>
+    <div class="balance-change out"><span class="bc-sign">–</span><span class="bc-token">gas</span><span class="bc-amount">~-$2.10</span></div>
+    <div class="balance-change in"><span class="bc-sign">+</span><span class="bc-token">${f.asset||'ETH'} (${f.toChain||'Base'})</span><span class="bc-amount">+${((f.amount||0.05)*0.9994).toFixed(4)}</span></div>`;
+  }
+
+  // allowance block
+  let allowanceBlock='';
+  if(!approval){
+    allowanceBlock=`<div class="safety-item"><div class="safety-check ok">✓</div><div>native token — no allowance required</div></div>`;
+  } else if(approved){
+    allowanceBlock=`<div class="safety-item"><div class="safety-check ok">✓</div><div>allowance verified for ${asset}</div></div>`;
+  } else {
+    allowanceBlock=`<div class="safety-item"><div class="safety-check warn">!</div><div>${asset} allowance required for ${spender}</div></div>
+    <div class="allowance-action">
+      <button class="btn btn-primary btn-sm" onclick="doPermit2()">Sign Permit2 ✦ <span style="font-size:11px;opacity:0.7">(gasless)</span></button>
+      <button class="btn btn-ghost btn-sm" onclick="doApprove()">Approve ${asset} on-chain</button>
+    </div>`;
+  }
+
+  const simOutput=a==='swap'?`simulates cleanly · output ≈ ${((f.amount||0.1)*3120).toFixed(2)} ${f.assetOut||'USDC'}`:a==='lend'?`simulates cleanly · supply confirmed`:a==='borrow'?`simulates cleanly · health factor 2.14`:a==='earn'||a==='find-vault'?`simulates cleanly · best APY 6.1%`:`simulates cleanly · bridge confirmed`;
+
+  return `<div class="ai-panel" id="aiCheckPanel">
+  <div class="ai-panel-title">AI check · <span class="ai-live">live</span></div>
+  <div class="ai-panel-sub">re-runs as you edit.</div>
+  <div class="ai-section-label">EXPECTED BALANCE CHANGES</div>
+  ${changes}
+  <div class="ai-divider"></div>
+  <div class="ai-section-label">ALLOWANCE & SAFETY</div>
+  ${allowanceBlock}
+  <div class="safety-item"><div class="safety-check ok">✓</div><div>contract verified · ${spenderFor(a)}</div></div>
+  <div class="safety-item"><div class="safety-check ok">✓</div><div>${simOutput}</div></div>
+</div>`;
+}
+
+function refreshAiCheck(){
+  const panel=document.getElementById('aiCheckPanel');
+  if(panel) panel.outerHTML=buildAiCheck(state.action,state.fields);
+  // reattach
+}
+
+function doPermit2() {
+  const asset=approvalAsset(state.action,state.fields);
+  const spender=spenderFor(state.action);
+  setAllowance(asset,spender);
+  state.usedPermit2=true;
+  const panel=document.getElementById('aiCheckPanel');
+  if(panel) panel.outerHTML=buildAiCheck(state.action,state.fields);
+}
+function doApprove() {
+  const btn=event.target;
+  btn.disabled=true; btn.textContent='Approving…';
+  setTimeout(()=>{
+    const asset=approvalAsset(state.action,state.fields);
+    setAllowance(asset,spenderFor(state.action));
+    const panel=document.getElementById('aiCheckPanel');
+    if(panel) panel.outerHTML=buildAiCheck(state.action,state.fields);
+  },1800);
+}
+
+function onExecute(){
+  lockStep(2);
+  state.skipApproveStep = !needsApproval(state.action,state.fields) || state.usedPermit2;
+  buildStep3();
+}
+
+/* ═══════════════════════════════════════════════════════════ STEP 03 ═══ */
+function buildStep3() {
+  const a=state.action;
+  const skip=state.skipApproveStep;
+
+  const stepsData = skip
+    ? [
+        {id:'xs1', title:'Pre-flight simulation',   sub:'eth_call against forked chain'},
+        {id:'xs2', title:`Sign ${ACTION_META[a]?.label||a}`, sub:`EIP-1559 · ${!needsApproval(a,state.fields)?'native ETH, no approval needed':state.usedPermit2?'Permit2 signed — 1 tx only':'ERC-20 approval done'}` },
+        {id:'xs3', title:'Broadcasting…',            sub:'in mempool'},
+        {id:'xs4', title:'Confirmed',                sub:'1 confirmation · settled'},
+      ]
+    : [
+        {id:'xs1', title:'Pre-flight simulation',   sub:'eth_call against forked chain'},
+        {id:'xs2', title:`Approve ${approvalAsset(a,state.fields)}`, sub:`ERC-20 allowance for ${spenderFor(a)}`},
+        {id:'xs3', title:`Sign ${ACTION_META[a]?.label||a}`, sub:'EIP-1559 · main transaction'},
+        {id:'xs4', title:'Broadcasting…',            sub:'in mempool'},
+        {id:'xs5', title:'Confirmed',                sub:'1 confirmation · settled'},
+      ];
+
+  const stepsHtml=stepsData.map((s,i)=>`
+    <div class="exec-step" id="${s.id}">
+      <div class="exec-icon">${i+1}</div>
+      <div class="exec-info"><div class="exec-title">${s.title}</div><div class="exec-sub">${s.sub}</div></div>
+      <div class="exec-status">queued</div>
+    </div>`).join('');
+
+  const html=`<div class="step-card" id="step3" style="position:relative">
+  <div class="step-head">
+    <span class="step-badge">STEP 03</span>
+    <h2 class="step-title">execute</h2>
+    <span class="step-status">in progress</span>
+  </div>
+  <p class="step-sub">native · ${skip?'1tx':'2tx'} · don't close the tab</p>
+  <div class="step-body">
+    <div class="exec-steps">${stepsHtml}</div>
+    <div style="margin-top:20px">
+      <button class="btn btn-primary" id="startExecBtn" onclick="startExecution()">connect wallet &amp; execute</button>
+      <button class="btn btn-ghost" style="margin-left:8px" onclick="unlockStep(2)">← back</button>
+    </div>
+  </div>
+</div>`;
+  appendStep(html,'step3');
+  state.currentStep=3;
+}
+
+function startExecution() {
+  if(state.txRunning) return;
+  state.txRunning=true;
+  document.getElementById('startExecBtn').disabled=true;
+  const skip=state.skipApproveStep;
+  const ids=skip?['xs1','xs2','xs3','xs4']:['xs1','xs2','xs3','xs4','xs5'];
+
+  // Step xs1: pre-flight — auto done after 800ms
+  activateExecStep('xs1');
+  setTimeout(()=>{
+    doneExecStep('xs1');
+    // show signature modal for signing step
+    const signId=skip?'xs2':'xs3';
+    activateExecStep(ids[1]);
+    showSigModal(skip?ids[1]:ids[1], ()=>{
+      doneExecStep(ids[1]);
+      if(!skip){
+        // second signature (main tx)
+        activateExecStep(ids[2]);
+        setTimeout(()=>{
+          showSigModal(ids[2],()=>{
+            doneExecStep(ids[2]);
+            runBroadcastAndConfirm(ids.slice(3));
+          });
+        },400);
+      } else {
+        runBroadcastAndConfirm(ids.slice(2));
+      }
+    });
+  },1000);
+}
+
+function activateExecStep(id){
+  const el=document.getElementById(id); if(!el)return;
+  el.classList.add('active');
+  el.querySelector('.exec-icon').textContent='·';
+  el.querySelector('.exec-status').textContent=(id==='xs1')?'running':'awaiting signature';
+}
+function doneExecStep(id){
+  const el=document.getElementById(id); if(!el)return;
+  el.classList.remove('active'); el.classList.add('done');
+  el.querySelector('.exec-icon').textContent='✓';
+  el.querySelector('.exec-status').textContent='done';
+}
+
+function runBroadcastAndConfirm(ids){
+  // broadcast
+  const broadId=ids[0];
+  const el=document.getElementById(broadId); if(el){el.classList.add('active');el.querySelector('.exec-status').textContent='in mempool';}
+  setTimeout(()=>{
+    if(el){el.classList.remove('active');el.classList.add('done');el.querySelector('.exec-icon').textContent='✓';el.querySelector('.exec-status').textContent='done';}
+    // confirm
+    const confId=ids[1];
+    const ce=document.getElementById(confId); if(ce){ce.classList.add('active');ce.querySelector('.exec-status').textContent='1 confirmation';}
+    setTimeout(()=>{
+      if(ce){ce.classList.remove('active');ce.classList.add('done');ce.querySelector('.exec-icon').textContent='✓';ce.querySelector('.exec-status').textContent='done';}
+      lockStep(3);
+      setTimeout(()=>buildStep4(),800);
+    },2000);
+  },1500);
+}
+
+/* ── signature modal ── */
+function showSigModal(stepId, onSign) {
+  const a=state.action, f=state.fields;
+  const isApproval=stepId.includes('xs2')&&!state.skipApproveStep;
+  const txType=isApproval?`Approve ${approvalAsset(a,f)}`:(ACTION_META[a]?.label||a);
+  const eipLine=needsApproval(a,f)&&!state.usedPermit2?'EIP-2612 · token approval':'EIP-1559 · native ETH swap';
+  const toAddr=isApproval?`0x${approvalAsset(a,f)}Router`:`0xE592...1564 (${spenderFor(a).split(' ')[0]})`;
+
+  const card=document.getElementById('step3');
+  const backdrop=document.createElement('div');
+  backdrop.className='modal-backdrop';
+  backdrop.id='sigBackdrop';
+  backdrop.innerHTML=`<div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+      <div class="modal-title">signature request</div>
+      <div class="modal-network">MetaMask · Sepolia</div>
+    </div>
+    <div class="modal-row"><span class="modal-key">ACTION</span><span class="modal-val">${txType}</span></div>
+    <div class="modal-row"><span class="modal-key">TYPE</span><span class="modal-val">${eipLine}</span></div>
+    <div class="modal-row"><span class="modal-key">FROM</span><span class="modal-val">0x7A4f3D...E9c2</span></div>
+    <div class="modal-row"><span class="modal-key">TO</span><span class="modal-val">${toAddr}</span></div>
+    <div class="modal-row"><span class="modal-key">EST. GAS</span><span class="modal-val">~$1.53</span></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="rejectSig()">reject</button>
+      <button class="btn btn-primary" onclick="signTx()">sign →</button>
+    </div>
+  </div>`;
+  card.appendChild(backdrop);
+  window._onSignCb=onSign;
+}
+
+function signTx(){
+  const b=document.getElementById('sigBackdrop');if(b)b.remove();
+  if(window._onSignCb){window._onSignCb();window._onSignCb=null;}
+}
+function rejectSig(){
+  const b=document.getElementById('sigBackdrop');if(b)b.remove();
+  state.txRunning=false;
+  document.getElementById('startExecBtn').disabled=false;
+  // reset exec steps
+  document.querySelectorAll('.exec-step').forEach(el=>{
+    el.classList.remove('active','done');
+    el.querySelector('.exec-icon').textContent=el.id.replace('xs','');
+    el.querySelector('.exec-status').textContent='queued';
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════ STEP 04 ═══ */
+function buildStep4() {
+  const a=state.action, f=state.fields;
+  const completeTitles={swap:'swap complete ✦',lend:'supply complete ✦',borrow:'borrow open ✦',earn:'vault position open ✦',bridge:'bridge complete ✦',['find-vault']:'vault found ✦'};
+  const completeSubs={swap:`received ${((f.amount||0.1)*3120).toFixed(2)} ${f.assetOut||'USDC'} · want to put it to work?`,lend:`earning 4.2% APY on ${f.amount||100} ${f.asset||'USDC'} · want to compound?`,borrow:`${f.amount||0.05} ${f.asset||'ETH'} in your wallet · protect this position?`,earn:`deposited into Morpho at 6.1% APY · want to auto-compound?`,bridge:`${f.amount||0.05} ${f.asset||'ETH'} arrived on ${f.toChain||'Base'} · put it to work?`,['find-vault']:`deposited into best vault · want to auto-compound?`};
+  const workflows=KEEPER_WORKFLOWS[a]||KEEPER_WORKFLOWS.earn;
+
+  const summaryPaid=a==='swap'?`${f.amount||0.1} ${f.assetIn||'ETH'}`:a==='lend'||a==='earn'?`${f.amount||100} ${f.asset||'USDC'}`:a==='borrow'?`collateral locked`:a==='bridge'?`${f.amount||0.05} ${f.asset||'ETH'}`:f.amount||'—';
+  const summaryReceived=a==='swap'?`${((f.amount||0.1)*3120).toFixed(2)} ${f.assetOut||'USDC'}`:a==='lend'?`${((f.amount||100)/22.4).toFixed(4)} cUSDC`:a==='borrow'?`${f.amount||0.05} ${f.asset||'ETH'}`:a==='earn'||a==='find-vault'?`vault shares`:a==='bridge'?`${((f.amount||0.05)*0.9994).toFixed(4)} ${f.asset||'ETH'}`:'-';
+  const txHash='0x'+(Math.random().toString(16).slice(2)+Math.random().toString(16).slice(2)).slice(0,12)+'…';
+
+  const wfGrid=workflows.map((w,i)=>`
+    <div class="wf-card ${w.featured?'featured':''}" id="wf${i}">
+      <div class="wf-kh-badge">KEEPERHUB</div>
+      <div class="wf-title">${w.title}</div>
+      <div class="wf-desc">${w.desc}</div>
+      <div class="wf-btns">
+        <button class="btn-wf-deploy" id="wfDeploy${i}" onclick="deployWf(${i})">${w.featured?'deploy →':'deploy →'}</button>
+        <button class="btn-wf-custom">customize</button>
+      </div>
+    </div>`).join('');
+
+  const html=`<div class="step-card" id="step4">
+  <div class="step-head">
+    <span class="step-badge">STEP 04</span>
+    <h2 class="step-title">${completeTitles[a]||'complete ✦'}</h2>
+    <span class="step-status">in progress</span>
+  </div>
+  <p class="step-sub">${completeSubs[a]||''}</p>
+  <div class="step-body">
+    <div class="step4-layout">
+      <div>
+        <div class="workflows-label">WORKFLOWS WE CAN DEPLOY</div>
+        <div class="wf-grid">${wfGrid}</div>
+        <div class="permission-banner" id="permBanner">
+          <div class="perm-icon">🔑</div>
+          <div class="perm-text">
+            <strong>one-time permission needed</strong>
+            <span>deploying a workflow needs a session-key signature so the keeper can act within strict limits. revoke any time.</span>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="grantPerm()">grant access</button>
+        </div>
+        <div id="permGranted" style="display:none" class="safety-item" style="margin-top:8px">
+          <div class="safety-check ok">✓</div><div>access granted · keeper ready to deploy</div>
+        </div>
+      </div>
+      <div>
+        <div class="summary-panel">
+          <div class="summary-title">summary</div>
+          <div class="summary-sub">your wish, fulfilled.</div>
+          <div class="summary-row"><span class="summary-key">ACTION</span><span class="summary-val">${a}</span></div>
+          <div class="summary-row"><span class="summary-key">PAID</span><span class="summary-val">${summaryPaid}</span></div>
+          <div class="summary-row"><span class="summary-key">RECEIVED</span><span class="summary-val">${summaryReceived}</span></div>
+          <div class="summary-row"><span class="summary-key">GAS</span><span class="summary-val">$1.53</span></div>
+          <div class="summary-row"><span class="summary-key">PATH</span><span class="summary-val">${!needsApproval(a,f)||state.usedPermit2?'native · 1tx':'erc20 · 2tx'}</span></div>
+          <div class="summary-row"><span class="summary-key">TX</span><span class="summary-val"><a href="#" class="tx-link">${txHash} ↗</a></span></div>
+          <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="startOver()">make another wish</button>
+          <button class="btn btn-ghost btn-full" style="margin-top:8px;border-color:var(--rule)">view portfolio</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`;
+  appendStep(html,'step4');
+  state.currentStep=4;
+}
+
+function grantPerm(){
+  state.permissionGranted=true;
+  document.getElementById('permBanner').style.display='none';
+  document.getElementById('permGranted').style.display='flex';
+}
+
+function deployWf(i){
+  const btn=document.getElementById('wfDeploy'+i);
+  if(!state.permissionGranted){ grantPerm(); }
+  if(btn){ btn.textContent='deploying…'; btn.disabled=true; }
+  setTimeout(()=>{
+    if(btn){ btn.textContent='deployed ✓'; btn.classList.add('deployed'); }
+  },1200);
+}
+
+function startOver(){
+  // remove all steps
+  for(let i=1;i<=4;i++){const c=document.getElementById('step'+i);if(c)c.remove();}
+  // reset state
+  state.action=''; state.fields={}; state.currentStep=0;
+  state.usedPermit2=false; state.skipApproveStep=false;
+  state.txRunning=false; state.permissionGranted=false;
+  localStorage.removeItem('w_intent');
+  appendStep(buildStep1(),'step1');
+  state.currentStep=1;
+}
+
+/* ═══════════════════════════════════════════════════════════ PERSIST ═══ */
+function saveState(){
+  try { localStorage.setItem('w_intent',JSON.stringify({action:state.action,fields:state.fields})); } catch(e){}
+}
+
+/* ═══════════════════════════════════════════════════════════ INIT ═══ */
+(function init(){
+  const container=document.getElementById('stepsContainer');
+  container.innerHTML=buildStep1();
+  state.currentStep=1;
+
+  // restore saved intent
+  try {
+    const s=JSON.parse(localStorage.getItem('w_intent')||'{}');
+    if(s.action && ACTION_META[s.action]){
+      state.action=s.action; state.fields=s.fields||{};
+      const t=document.getElementById('actionTrigger');
+      if(t){t.classList.remove('empty');document.getElementById('actionLabel').textContent=ACTION_META[s.action].label;}
+      renderDynamicFields();
+    }
+  } catch(e){}
+})();
+</script>
+</body>
+</html>
